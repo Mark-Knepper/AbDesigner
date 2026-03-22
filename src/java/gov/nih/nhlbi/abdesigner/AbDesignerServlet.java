@@ -53,18 +53,70 @@ public class AbDesignerServlet extends HttpServlet {
      * @throws ServletException if a servlet-specific error occurs
      * @throws IOException if an I/O error occurs
      */
+    private static final String[] VALID_INPUT_TYPES = {"Gene Symbol", "Accession Number", "Entry Name", "FASTA"};
+    private static final String[] VALID_SPECIES = {"HUMAN", "RAT", "MOUSE", "DROME", "CAEEL", "YEAST", "ARATH"};
+
+    private static boolean isValidOption(String value, String[] validOptions) {
+        if (value == null) return false;
+        for (String option : validOptions) {
+            if (option.equals(value)) return true;
+        }
+        return false;
+    }
+
+    private static String sanitizeInput(String input) {
+        if (input == null) return "";
+        return input.replaceAll("[<=>?&$%@\"+'`;\\\\|{}\\[\\]()!]", "").trim();
+    }
+
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, ClassNotFoundException {
 
         HttpSession session = request.getSession();
         synchronized (session) {
             if (session.getAttribute("waitPage") == null) {
-                // get parameters from the form
-                session.setAttribute("inputType", request.getParameter("inputType"));
-                session.setAttribute("species", request.getParameter("species"));
-                session.setAttribute("input", request.getParameter("input").trim().toUpperCase());
-                session.setAttribute("peptideLength", request.getParameter("peptideLength"));
-                session.setAttribute("epitopeLength", request.getParameter("epitopeLength"));
+                // get and validate parameters from the form
+                String inputType = request.getParameter("inputType");
+                String species = request.getParameter("species");
+                String rawInput = request.getParameter("input");
+                String peptideLengthStr = request.getParameter("peptideLength");
+                String epitopeLengthStr = request.getParameter("epitopeLength");
+
+                // validate required parameters
+                if (!isValidOption(inputType, VALID_INPUT_TYPES)
+                        || !isValidOption(species, VALID_SPECIES)
+                        || rawInput == null || rawInput.trim().isEmpty()
+                        || peptideLengthStr == null || epitopeLengthStr == null) {
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid or missing parameters");
+                    return;
+                }
+
+                // validate numeric ranges
+                int pepLen, epiLen;
+                try {
+                    pepLen = Integer.parseInt(peptideLengthStr.replaceAll("\\D", ""));
+                    epiLen = Integer.parseInt(epitopeLengthStr.replaceAll("\\D", ""));
+                } catch (NumberFormatException e) {
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid length parameters");
+                    return;
+                }
+                if (pepLen < 5 || pepLen > 50 || epiLen < 5 || epiLen > pepLen) {
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Length parameters out of range");
+                    return;
+                }
+
+                // sanitize input (server-side, mirrors client-side filtering)
+                String sanitizedInput = sanitizeInput(rawInput).toUpperCase();
+                if (sanitizedInput.isEmpty()) {
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Input is empty after sanitization");
+                    return;
+                }
+
+                session.setAttribute("inputType", inputType);
+                session.setAttribute("species", species);
+                session.setAttribute("input", sanitizedInput);
+                session.setAttribute("peptideLength", peptideLengthStr);
+                session.setAttribute("epitopeLength", epitopeLengthStr);
                 session.setAttribute("waitPage", Boolean.TRUE);
                 response.setContentType("text/html;charset=UTF-8");
                 PrintWriter out = response.getWriter();
