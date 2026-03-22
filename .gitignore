@@ -18,6 +18,7 @@ Thumbs.db
 
 # Serialized database files (large, binary)
 web/WEB-INF/database/*.ab
+web/WEB-INF/database/*.ran
 
 # Temp files
 *.tmp
