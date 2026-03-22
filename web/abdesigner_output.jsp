@@ -69,11 +69,11 @@
         <script src="js/heatmap.js"></script>
         <p></p>
         <table cellspacing="5" cellpadding="5" border="0" style="table-layout:auto; width:100%; max-width:1170px;">
-            <col width=370>
-            <col width=30>
-            <col width=370>
-            <col width=30>
-            <col width=370>
+            <col style="width:32%">
+            <col style="width:2%">
+            <col style="width:32%">
+            <col style="width:2%">
+            <col style="width:32%">
             <tr>
                 <td>
                     <label for="Ig-score_rank"><strong>Ig-score rank:</strong></label>
