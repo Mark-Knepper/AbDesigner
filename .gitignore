@@ -1,0 +1,25 @@
+# Build output
+build/
+dist/
+
+# NetBeans
+nbproject/private/
+nbbuild/
+nbdist/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Serialized database files (large, binary)
+web/WEB-INF/database/*.ab
+
+# Temp files
+*.tmp
+*.bak
+*.swp

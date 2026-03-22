@@ -1,0 +1,336 @@
+<!--
+To change this template, choose Tools | Templates
+and open the template in the editor.
+-->
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>AbDesigner</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <style type="text/css">
+            body {
+                color : white;
+                background-color : #000033;
+                font-family : Arial, Helvetica, sans-serif;
+            }
+            a:link {
+                color : #ffd700;
+            }
+            a:visited {
+                color : #ffd700;
+            }
+            a:active {
+                color : #ff0000;
+            }
+            img {
+                border : 0;
+            }
+            strong {
+                color : #ffd700;
+            }
+            em {
+                color : #ffd700;
+            }
+            div {
+                text-align : center;
+            }
+            table,th,td {
+                border: 1px solid gray;
+            }
+        </style>
+        <script type="text/javascript">
+    
+            var _gaq = _gaq || [];
+            _gaq.push(['_setAccount', 'UA-28895592-1']);
+            _gaq.push(['_trackPageview']);
+    
+            (function() {
+                var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+                ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+            })();
+    
+        </script>
+    </head>
+    <body>
+        <h1><a href="index.jsp" target="_blank" rel="noopener noreferrer"><img src="images/AbDesigner_logo.png" alt="NHLBI-AbDesigner" height="77"></a></h1>
+        <h2>Frequently Asked Questions</h2>
+        <ul>
+            <li><a href="#objective">What is the objective of AbDesigner?</a></li>
+        </ul>
+        <ul>
+            <li><a href="#input">What is the input of AbDesigner?</a></li>
+        </ul>
+        <ul>
+            <li><a href="#limitations">What are the limitations associated with submitting a FASTA amino acid sequence?</a></li>
+        </ul>
+        <ul>
+            <li><a href="#peptideLength">How long should I set the &#39;Peptide Length&#39;?</a></li>
+        </ul>
+        <ul>
+            <li><a href="#epitopeLength">How long should I set the &#39;Epitope Length&#39;?</a></li>
+        </ul>
+        <ul>
+            <li><a href="#output">What is the output of AbDesigner?</a></li>
+        </ul>
+        <ul>
+            <li><a href="#sequence">What information are displayed on the amino acid sequence in the main output panel?</a></li>
+        </ul>
+        <ul>
+            <li><a href="#Chou-Fasman">What information are displayed on the Chou-Fasman secondary structure prediction in the main output panel?</a></li>
+        </ul>
+        <ul>
+            <li><a href="#Kyte-Doolittle">What information are displayed on the Kyte-Doolittle (K-D) hydropathy heat map in the main output panel?</a></li>
+        </ul>
+        <ul>
+            <li><a href="#immunogenicity_score">What is the Immunogenicity Score (Ig Score)?</a></li>
+        </ul>
+        <ul>
+            <li><a href="#uniqueness_score">What is the Uniqueness Score?</a></li>
+        </ul>
+        <ul>
+            <li><a href="#conservation_score">What is the Conservation Score?</a></li>
+        </ul>
+        <ul>
+            <li><a href="#heat_maps">How the Immunogenicity Score, Uniqueness Score, and Conservation Score are displayed in the main output panel?</a></li>
+        </ul>
+        <ul>
+            <li><a href="#protein_features">What is the Protein Features?</a></li>
+        </ul>
+        <ul>
+            <li><a href="#sorted_lists">What are the three separate lists of peptides under the main output panel?</a></li>
+        </ul>
+        <hr>
+        <a name="objective"><strong>What is the objective of AbDesigner?</strong></a><br>
+        The objective of AbDesigner is to display the features of a protein relevant to the choice of a synthetic peptide sequence to be used as an immunogen in antibody production.  
+        It does so in a manner that allows the user to judge trade-offs for candidate peptide sequences with respect to multiple factors including hydropathy, secondary structure, uniqueness, conservation among species, and the presence or absence of post-translational modifications.
+        <br><br><a name="input"><strong>What is the input of AbDesigner?</strong></a><br>
+        To specify a protein for analysis, the program accepts the following types of input:
+        <ul>
+            <li>Official Gene Symbol</li>
+            <li>Swiss-Prot Accession Number</li>
+            <li>Swiss-Prot Entry Name</li>
+        </ul>
+        from any of the following seven species:
+        <ul>
+            <li>Homo sapiens</li>
+            <li>Rattus norvegicus</li>
+            <li>Mus musculus</li>
+            <li>Drosophila melanogaster</li>
+            <li>Caenorhabditis elegans</li>
+            <li>Saccharomyces cerevisiae</li>
+            <li>Arabidopsis thaliana</li>
+        </ul>
+        Proteins from other species can be analyzed by entering the sequence of that protein FASTA format
+        (This should be avoided when analyzing proteins from the above seven species because of the limitations associated with submitting a FASTA amino acid sequence as described <a href="#limitations">below</a>).
+        <br><br><a name="limitations"><strong>What are the limitations associated with submitting a FASTA amino acid sequence?</strong></a><br>
+        By submitting just a FASTA amino acid sequence, the program assumes that the input protein is not present in the local Swiss-Prot protein database (from the following seven species: Homo sapiens, Rattus norvegicus, Mus musculus, Drosophila melanogaster, Caenorhabditis elegans, Saccharomyces cerevisiae, or Arabidopsis thaliana).
+        Thus, the following processes that make use of the database cannot be executed:
+        <br><br>
+        <table>
+            <tr>
+                <th>
+                    <strong>Process not executed when submitting a FASTA amino acid sequence</strong>
+                </th>
+                <th>
+                    <strong>Consequent</strong>
+                </th>
+            </tr>
+            <tr>
+                <td>
+                    Extraction of Protein Features
+                </td>
+                <td>
+                    Protein Features will not be displayed in the graphical output
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Calculation of Tail Bonus
+                </td>
+                <td>
+                    Immunogenicity Score will be calculated without factoring in Tail Bonus
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Calculation of Uniqueness Score
+                </td>
+                <td>
+                    Uniqueness Score will not be calculated, the graphical output of Uniqueness Score will be the default brightest yellow, and Uniqueness-optimized rank will be the same as Immunogenicity Score rank
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Calculation of Conservation Score
+                </td>
+                <td>
+                    Conservation Score will not be calculated, the graphical output of Conservation Score will be the default black, and Conservation-optimized rank will be the same as Immunogenicity Score rank
+                </td>
+            </tr>
+        </table>
+        <br><a name="peptideLength"><strong>How long should I set the &#39;Peptide Length&#39;?</strong></a>
+        <ul>
+            <li>A user-defined sequence length for production of synthetic peptides for immunization can be set from 5 to 50 amino acids.</li>
+            <li>A peptide of 10-25 amino acids is typically used.</li>
+            <li>A longer sequence can provide a greater likelihood of producing a potent antibody by virtue of the fact that it contains more potential epitopes, but by the same token there is a greater chance that it will produce IgG clones with lower specificity.</li>
+            <li>Furthermore, the cost of peptide synthesis often increases substantially with larger peptides.</li>
+        </ul>
+        <br><a name="epitopeLength"><strong>How long should I set the &#39;Epitope Length&#39;?</strong></a>
+        <ul>
+            <li>A user-defined linear &#39;Epitope Length&#39; can be set from 5 amino acids to the full length of the peptide.</li>
+            <li>Only the 5-10 amino acids in each hypervariable region form the antigen-binding site of an antibody molecule. As a result, the size of the antigenic determinant (epitope) that an antibody recognizes is generally comparably small.</li>
+            <li>The &#39;Epitope Length&#39; is used for determination of uniqueness and conservation of a peptide as described <a href="#uniqueness_score">below</a>.</li>
+        </ul>
+        <br><a name="output"><strong>What is the output of AbDesigner?</strong></a><br>
+        After the input values are entered, AbDesigner calculates and displays a variety of information and allows users to &#39;mouse-over&#39; each element to obtain further data including:
+        <ul>
+            <li><a href="#sequence">Amino acid sequence</a></li>
+            <li><a href="#Chou-Fasman">Chou-Fasman secondary structure prediction</a></li>
+            <li><a href="#Kyte-Doolittle">Kyte-Doolittle (K-D) hydropathy index</a></li>
+            <li><a href="#immunogenicity_score">Immunogenicity Score (Ig Score)</a></li>
+            <li><a href="#uniqueness_score">Uniqueness Score</a></li>
+            <li><a href="#conservation_score">Conservation Score</a></li>
+            <li><a href="#protein_features">Protein Features</a></li>
+            <li><a href="#sorted_lists">Three separate lists of peptides sorted by Immunogenicity Score rank, Uniqueness-optimized rank, and Conservation-optimized rank</a></li>
+        </ul>
+        <br><a name="sequence"><strong>What information are displayed on the amino acid sequence in the main output panel?</strong></a><br>
+        When users mouse-over the main panel, the peptide of interest of the appropriate length is highlighted in yellow with the central amino acid underlined.  
+        The low complexity regions of a protein identified by the <em>segmasker</em> program (based on the <a href="http://www.ncbi.nlm.nih.gov/pubmed?term=8743706" target="_blank" rel="noopener noreferrer">SEG filtering algorithm</a>, obtained from the <a href="ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/" target="_blank" rel="noopener noreferrer">NCBI C++ Toolkit</a>) are displayed in red font and on mouse-over along the protein sequence row.
+        <br><br><a name="Chou-Fasman"><strong>What information are displayed on the Chou-Fasman secondary structure prediction in the main output panel?</strong></a><br>
+        The Chou-Fasman prediction is performed as <a href="http://www.ncbi.nlm.nih.gov/pubmed?term=364941" target="_blank" rel="noopener noreferrer">described</a> except for slight modifications.  
+        The secondary structure predicted, i.e. alpha helix, beta sheet, strong beta turn, or weak beta turn is displayed by different colors and on mouse-over.  
+        High immunogenicity correlates with a lack of alpha helices or beta sheets, and presence of beta turns.  
+        The chief practical value of this analysis is that it identifies locations of prolines (the chief determinant of a prediction of &#39;beta-turn&#39;), which aid immunogenicity by interfering with &alpha;-helix formation.
+        <br><br><a name="Kyte-Doolittle"><strong>What information are displayed on the Kyte-Doolittle (K-D) hydropathy heat map in the main output panel?</strong></a><br>
+        The main panel displays the Kyte-Doolittle hydropathy index (KDHI) of each peptide along a protein sequence.  
+        The KDHI is displayed in 8-bit scale (0 - 255) RGB color heat map and on mouse-over.  
+        Given that lower KDHI values correlate with greater immunogenicity, the 8-bit transformation of the KDHI is performed in the reverse direction so that the lowest value (-4.5, most hydrophilic) is transformed to 255 (displayed in the brightest cyan, by default) while the highest value (4.5, most hydrophobic) is transformed to 0.
+        <br><br><a name="immunogenicity_score"><strong>What is the Immunogenicity Score (Ig Score)?</strong></a><br>
+        Immunogenicity Score is a predictor of immunogenicity.  
+        The higher the score, the greater the predicted immunogenicity.  
+        The Immunogenicity Score of a peptide is calculated from the following formula:<br><br>  
+        <img src="images/Ig_Score_latex.png" /><br><br>
+        Where: KDHI = Kyte-Doolittle hydropathy index, P<sub>t (average)</sub> = average Chou-Fasman conformational parameters of beta turn, and Tail Bonus = a value ranging from 1.0 to 1.5.  
+        KDHI is an average value of the hydropathy indices of consecutive amino acids in a peptide.  
+        It is calculated using the <a href="http://www.ncbi.nlm.nih.gov/pubmed?term=7108955" target="_blank" rel="noopener noreferrer">hydropathy scale</a> (a range of -4.5 to 4.5), with a negative KDHI predicted to be more immunogenic than a positive KDHI.  
+        Thus, the negative value of the KDHI is used in the formula.  
+        A value of 4.5 is added in order to keep the Immunogenicity Score in a positive range.  
+        P<sub>t (average)</sub> is an average value of the Chou-Fasman conformational parameters of a beta turn (P<sub>t</sub>) of amino acids in a peptide.  
+        It is calculated using P<sub>t</sub> values from a reference database of 29 proteins as <a href="http://www.ncbi.nlm.nih.gov/pubmed?term=364941" target="_blank" rel="noopener noreferrer">described</a>.  
+        The &#39;topological domain&#39; information of a protein extracted from the Swiss-Prot database is used for determining the Tail Bonus.  
+        Tail Bonus is only given to a peptide that resides in NH2- or COOH-terminal tail of an integral membrane protein.  
+        Tail Bonus values can range from 1.0 to 1.5.  
+        A Tail Bonus value of 1.5 corresponds to the full length of a peptide being present in a tail region, while a peptide whose full length is present in a non-tail region is given a tail bonus value of 1.0.  
+        Values are linearly correlated with the number of amino acids contained in the tail compared with the entire length of the peptide.
+        <br><br><a name="uniqueness_score"><strong>What is the Uniqueness Score?</strong></a><br>
+        A typical immunogenic peptide is assumed to contain multiple linear, overlapping potential epitopes (~ 5-10 amino acids), each of which can theoretically invoke an immune response.  
+        The uniqueness of these linear epitope sequences compared with other proteins of the same species helps determine the specificity of an antibody produced against that peptide.  
+        In AbDesigner, the sequence of each successive linear epitope (shifting by one amino acid) along a peptide sequence is compared against the entire protein sequence database of that species.  
+        The length of a linear epitope can be set from 5 amino acids to the full length of the peptide.  
+        The total number of linear epitopes in other proteins that have sequences identical to the linear epitopes in a given peptide is calculated as follows:<br><br>
+        <img src="images/total_matches_latex.png" /><br><br>
+        Where: M = the total number of linear epitope matches, n = the number of successive linear epitopes along a peptide sequence, and m<sub>i</sub> = the number of the linear epitopes in the other proteins that have sequences identical to the linear epitope i.  
+        Redundant linear epitopes in a protein are counted only once.  
+        A higher value of M corresponds to a less unique peptide and vice versa.  
+        The Uniqueness Score of a peptide is then calculated based on the following formula:<br><br>
+        <img src="images/Uniqueness_Score_latex.png" /><br><br>
+        Where: M<sub>c</sub> = the cutoff value for M.  
+        The highest Uniqueness Score is equal to M<sub>c</sub> (when there is no match to any linear epitopes in a peptide, M = 0) and the lowest Uniqueness Score is equal to 0 (when the total number of linear epitope matches is equal to or above the cutoff value, M &ge; M<sub>c</sub>).  
+        M<sub>c</sub> is arbitrarily set to three times of n.
+        <br><br><a name="conservation_score"><strong>What is the Conservation Score?</strong></a><br>
+        Conservation Score predicts the likelihood that the target protein will be detectable by the antibody in multiple orthologous species.  
+        The higher the score, the greater the predicted conservation.  
+        The Conservation Score of a peptide is determined in a comparable manner to the Uniqueness Score.  
+        To begin with, the sequence of each successive linear epitope (shifting by one amino acid) along a peptide in a protein is compared against the sequences of the orthologous proteins, based on a mnemonic protein identification code in the <a href="http://www.uniprot.org/manual/entry_name" target="_blank" rel="noopener noreferrer">Swiss-Prot entry name</a>, among three commonly studied species (i.e. human, rat, and mouse).  
+        The Conservation Score of a peptide is then calculated from the total number of linear epitopes in orthologous proteins that have sequences identical to the linear epitopes in a given peptide as follows:<br><br>
+        <img src="images/Conservation_Score_latex.png" /><br><br>
+        Where: n = the number of successive linear epitopes along a peptide sequence and c<sub>i</sub> = the number of the linear epitopes in the orthologous proteins that have sequences identical to the linear epitope i.  
+        Redundant linear epitopes in a protein are counted only once.  
+        The highest Conservation Score is reached when a peptide is completely conserved across all three species and is equal to the total number of the orthologous species evaluated multiplied by n.  
+        The lowest Conservation Score is equal to 0 (when there is no conservation).
+        <br><br><a name="heat_maps"><strong>How the Immunogenicity Score, Uniqueness Score, and Conservation Score are displayed in the main output panel?</strong></a><br>
+        The Immunogenicity Score, Uniqueness Score, and Conservation Score of each peptide are displayed in 8-bit RGB color heat maps.  
+        The transformation of those values into a density representation (D) on an 8-bit scale (0 - 255) is performed using linear scaling: D = 255 &times; (X - X<sub>min</sub>)/(X<sub>max</sub> - X<sub>min</sub>), where X is the value, X<sub>min</sub> is the minimum value and X<sub>max</sub> is the maximum value as defined below:
+        <br><br>
+        <table>
+            <tr>
+                <th>
+                    <strong>X</strong>
+                </th>
+                <th>
+                    <strong>X<sub>min</sub></strong>
+                </th>
+                <th>
+                    <strong>X<sub>max</sub></strong>
+                </th>
+            </tr>
+            <tr>
+                <td>
+                    Ig Score
+                </td>
+                <td>
+                    the lowest Ig Score in that protein
+                </td>
+                <td>
+                    the highest Ig Score in that protein
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Uniqueness Score
+                </td>
+                <td>
+                    0
+                </td>
+                <td>
+                    3 times of n
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Conservation Score
+                </td>
+                <td>
+                    0
+                </td>
+                <td>
+                    the total number of the orthologous species evaluated multiplied by n
+                </td>
+            </tr>
+        </table>
+        Note: n = the number of successive linear epitopes along a peptide sequence
+        <br><br>
+        By default, the highest Immunogenicity Score, Uniqueness Score, and Conservation Score are displayed in the brightest green, yellow, and red, respectively.  
+        However, user-defined colors can be selected from the menu bar.  
+        In addition, for each peptide, the Immunogenicity Score value and rank are displayed on mouse-over in the Immunogenicity Score heat map, whereas multiple sequence alignments are displayed on mouse-over in the Uniqueness and Conservation heat maps.
+        <br><br><a name="protein_features"><strong>What is the Protein Features?</strong></a><br>
+        The Protein Features reported are position-dependent annotations of regions or sites of interest such as post-translational modifications, binding sites, enzyme active sites, local secondary structure, sequence conflicts, and other characteristics culled from the appropriate Swiss-Prot protein record.
+        They are displayed by various distinct colors and on mouse-over along a protein sequence.
+        <br><br><a name="sorted_lists"><strong>What are the three separate lists of peptides under the main output panel?</strong></a><br>
+        Under the main output panel are three separate lists of peptides sorted by Immunogenicity Score rank, Uniqueness-optimized rank, and Conservation-optimized rank.  
+        <ul>
+            <li>&#39;Ig Score rank&#39; shows peptides from most immunogenic to least.</li>
+            <li>&#39;Uniqueness-optimized rank&#39; shows primary ranking of peptides from most &#39;unique&#39; (i.e. specific for target protein versus all other proteins in that species) to least unique, with secondary ranking based on Immunogenicity Score.</li>
+            <li>&#39;Conservation-optimized rank&#39; shows primary ranking of peptides from most &#39;conserved&#39; (i.e. sequence is conserved among multiple orthologous species) to least conserved, with secondary ranking based on Immunogenicity Score.</li>
+        </ul>
+        These lists provide an alternative to the heat maps for identification of candidate peptides for immunization.  
+        However, use of these lists alone has the pitfall that they do not take into account the protein annotations provided in the main display.
+        <hr>
+        <div class="footarea">
+            <div class="footer">
+                <a href="http://helix.nih.gov/disclaimer.html" class="footlink" target="_blank" rel="noopener noreferrer">Disclaimer</a> |
+                <a href="http://helix.nih.gov/privacy.html" class="footlink" target="_blank" rel="noopener noreferrer">Privacy</a> |
+                <a href="http://www.nhlbi.nih.gov/nhlbi508form.htm" class="footlink" target="_blank" rel="noopener noreferrer">Accessibility</a> |
+            </div>
+            <div class="footer2">
+                <a href="http://helix.nih.gov/" class="footlink" target="_blank" rel="noopener noreferrer">Helix Systems</a> |
+                <a href="http://cit.nih.gov/" class="footlink" target="_blank" rel="noopener noreferrer">CIT</a> |
+                <a href="http://www.nhlbi.nih.gov/" class="footlink" target="_blank" rel="noopener noreferrer">NHLBI</a> |
+                <a href="http://www.nih.gov/" class="footlink" target="_blank" rel="noopener noreferrer">NIH</a> |
+                <a href="http://www.dhhs.gov/" class="footlink" target="_blank" rel="noopener noreferrer">DHHS</a> |
+                <a href="http://www.firstgov.gov/" class="footlink" target="_blank" rel="noopener noreferrer">USA.gov</a>
+            </div>
+        </div>
+    </body>
+</html>

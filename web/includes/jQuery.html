@@ -1,0 +1,112 @@
+<link type="text/css" href="css/ui-lightness/jquery-ui.custom.css" rel="Stylesheet" />	
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui.custom.min.js"></script>
+<script type="text/javascript" src="js/ARATH.js"></script>
+<script type="text/javascript" src="js/CAEEL.js"></script>
+<script type="text/javascript" src="js/DROME.js"></script>
+<script type="text/javascript" src="js/HUMAN.js"></script>
+<script type="text/javascript" src="js/MOUSE.js"></script>
+<script type="text/javascript" src="js/RAT.js"></script>
+<script type="text/javascript" src="js/YEAST.js"></script>
+<script type="text/javascript" src="js/accession.js"></script>
+<script type="text/javascript" src="js/locus.js"></script>
+<style type="text/css">
+    .ui-autocomplete {
+        max-height: 100px;
+        overflow-y: auto;
+        /* prevent horizontal scrollbar */
+        overflow-x: hidden;
+        /* add padding to account for vertical scrollbar */
+        padding-right: 20px;
+    }
+    /* IE 6 doesn't support max-height
+     * we use height instead, but this forces the menu to always be this tall
+    */
+    * html .ui-autocomplete {
+        height: 100px;
+    }
+</style>
+<script type="text/javascript">
+    function autocompleteUI() {
+        var checkedInputType = $('input:radio[name=inputType]:checked').val();
+        var selectedSpecies = $('#species').val();
+        var array;
+        if (checkedInputType == "Gene Symbol") {
+            switch (selectedSpecies) {
+                case "ARATH":
+                    array = ARATH;
+                    break;
+                case "CAEEL":
+                    array = CAEEL;
+                    break;
+                case "DROME":
+                    array = DROME;
+                    break;
+                case "HUMAN":
+                    array = HUMAN;
+                    break;
+                case "MOUSE":
+                    array = MOUSE;
+                    break;
+                case "RAT":
+                    array = RAT;
+                    break;
+                case "YEAST":
+                    array = YEAST;
+                    break;
+            }
+        } else if (checkedInputType == "Accession Number") {
+            array = accession;
+        } else if (checkedInputType == "Entry Name") {
+            array = locus;
+        }
+        
+        $( "#input" ).autocomplete({
+            minLength: 2,
+            source: function( request, response ) {
+                var matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( request.term ), "i" );
+                response( $.grep( array, function( elementOfArray ) {
+                    return matcher.test( elementOfArray );
+                }) );
+            }
+        });
+    }
+    
+    $(function() {
+        $( "#inputTypeDialog" ).dialog({
+            autoOpen: false
+        });
+
+        $( "#inputTypeDialogOpener" ).click(function() {
+            $( "#inputTypeDialog" ).dialog( "open" );
+            return false;
+        });
+        
+        $( "#inputDialog" ).dialog({
+            autoOpen: false
+        });
+
+        $( "#inputDialogOpener" ).click(function() {
+            $( "#inputDialog" ).dialog( "open" );
+            return false;
+        });
+        
+        $( "#peptideLengthDialog" ).dialog({
+            autoOpen: false
+        });
+
+        $( "#peptideLengthDialogOpener" ).click(function() {
+            $( "#peptideLengthDialog" ).dialog( "open" );
+            return false;
+        });
+        
+        $( "#epitopeLengthDialog" ).dialog({
+            autoOpen: false
+        });
+
+        $( "#epitopeLengthDialogOpener" ).click(function() {
+            $( "#epitopeLengthDialog" ).dialog( "open" );
+            return false;
+        });
+    });
+</script>
