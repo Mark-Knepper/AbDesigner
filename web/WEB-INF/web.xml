@@ -12,24 +12,9 @@
         <session-timeout>
             30
         </session-timeout>
+        <tracking-mode>COOKIE</tracking-mode>
     </session-config>
-    <security-constraint>
-        <web-resource-collection>
-            <web-resource-name>Entire Application</web-resource-name>
-            <url-pattern>/*</url-pattern>
-        </web-resource-collection>
-        <auth-constraint>
-            <role-name>tester</role-name>
-        </auth-constraint>
-    </security-constraint>
-    <login-config>
-        <auth-method>BASIC</auth-method>
-        <realm-name>AbDesigner Testing</realm-name>
-    </login-config>
-    <security-role>
-        <role-name>tester</role-name>
-    </security-role>
-    <welcome-file-list>
+<welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
     <error-page>
