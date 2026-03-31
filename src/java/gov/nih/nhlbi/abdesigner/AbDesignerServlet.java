@@ -106,7 +106,10 @@ public class AbDesignerServlet extends HttpServlet {
                 }
 
                 // sanitize input (server-side, mirrors client-side filtering)
-                String sanitizedInput = sanitizeInput(rawInput).toUpperCase();
+                // FASTA input contains > | = [] characters needed for header parsing;
+                // sequence lines are cleaned by the FASTA parser itself (line 195)
+                String sanitizedInput = "FASTA".equals(inputType) ? rawInput.trim() : sanitizeInput(rawInput);
+                sanitizedInput = sanitizedInput.toUpperCase();
                 if (sanitizedInput.isEmpty()) {
                     response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Input is empty after sanitization");
                     return;
@@ -125,7 +128,7 @@ public class AbDesignerServlet extends HttpServlet {
                     out.println("<meta http-equiv='Refresh' content='0'>");
                     out.println("<title>AbDesigner</title>");
                     request.getRequestDispatcher("/includes/title.html").include(request, response);
-                    out.println("<h1>Your request is being processed<br>Please wait...</h1><br>");
+                    out.println("<h1>Your request is being processed<br>May require up to 90 seconds for large proteins<br>Please wait...</h1><br>");
                     request.getRequestDispatcher("/includes/footer.html").include(request, response);
                 } finally {
                     out.close();

@@ -24,9 +24,12 @@ Please enable JavaScript in your browser.
             alert("Epitope Length cannot be longer than Peptide Length");
             form.epitopeLength.focus();
         } else {
-            var rawValue = document.getElementById("input").value;
-            var sanitizedValue = rawValue.replace(/[<\=\?&\$%@"\+]/g, "");
-            document.getElementById("input").value = sanitizedValue;
+            var isFasta = document.getElementById("FASTA").checked;
+            if (!isFasta) {
+                var rawValue = document.getElementById("input").value;
+                var sanitizedValue = rawValue.replace(/[<\=\?&\$%@"\+]/g, "");
+                document.getElementById("input").value = sanitizedValue;
+            }
             form.submit();
         }
     }

@@ -234,15 +234,19 @@ public class HeatMapArguments {
         appendStringArray(sb, "peptide", peptide); sb.append(",");
         // arrayAllRegion and arrayAllSite as string arrays
         sb.append("\"arrayAllRegion\":[");
-        for (int i = 0; i < arrayAllRegion.length; i++) {
-            if (i > 0) sb.append(",");
-            sb.append("\"").append(escapeJson(arrayAllRegion[i].toString())).append("\"");
+        if (arrayAllRegion != null) {
+            for (int i = 0; i < arrayAllRegion.length; i++) {
+                if (i > 0) sb.append(",");
+                sb.append("\"").append(escapeJson(arrayAllRegion[i].toString())).append("\"");
+            }
         }
         sb.append("],");
         sb.append("\"arrayAllSite\":[");
-        for (int i = 0; i < arrayAllSite.length; i++) {
-            if (i > 0) sb.append(",");
-            sb.append("\"").append(escapeJson(arrayAllSite[i].toString())).append("\"");
+        if (arrayAllSite != null) {
+            for (int i = 0; i < arrayAllSite.length; i++) {
+                if (i > 0) sb.append(",");
+                sb.append("\"").append(escapeJson(arrayAllSite[i].toString())).append("\"");
+            }
         }
         sb.append("],");
         appendStringArray(sb, "arrayRegionSite", arrayRegionSite); sb.append(",");
@@ -264,27 +268,33 @@ public class HeatMapArguments {
 
     private static void appendDoubleArray(StringBuilder sb, String key, double[] arr) {
         sb.append("\"").append(key).append("\":[");
-        for (int i = 0; i < arr.length; i++) {
-            if (i > 0) sb.append(",");
-            sb.append(arr[i]);
+        if (arr != null) {
+            for (int i = 0; i < arr.length; i++) {
+                if (i > 0) sb.append(",");
+                sb.append(arr[i]);
+            }
         }
         sb.append("]");
     }
 
     private static void appendStringArray(StringBuilder sb, String key, String[] arr) {
         sb.append("\"").append(key).append("\":[");
-        for (int i = 0; i < arr.length; i++) {
-            if (i > 0) sb.append(",");
-            sb.append("\"").append(escapeJson(arr[i])).append("\"");
+        if (arr != null) {
+            for (int i = 0; i < arr.length; i++) {
+                if (i > 0) sb.append(",");
+                sb.append("\"").append(escapeJson(arr[i])).append("\"");
+            }
         }
         sb.append("]");
     }
 
     private static void appendBooleanArray(StringBuilder sb, String key, boolean[] arr) {
         sb.append("\"").append(key).append("\":[");
-        for (int i = 0; i < arr.length; i++) {
-            if (i > 0) sb.append(",");
-            sb.append(arr[i]);
+        if (arr != null) {
+            for (int i = 0; i < arr.length; i++) {
+                if (i > 0) sb.append(",");
+                sb.append(arr[i]);
+            }
         }
         sb.append("]");
     }
