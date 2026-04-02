@@ -5,6 +5,8 @@
 package gov.nih.nhlbi.abdesigner;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -46,7 +48,7 @@ public class AbDesignerServlet extends HttpServlet {
         }
     }
 
-    /** 
+    /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code> methods.
      * @param request servlet request
      * @param response servlet response
@@ -72,234 +74,339 @@ public class AbDesignerServlet extends HttpServlet {
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, ClassNotFoundException {
 
-        HttpSession session = request.getSession();
-        synchronized (session) {
-            if (session.getAttribute("waitPage") == null) {
-                // get and validate parameters from the form
-                String inputType = request.getParameter("inputType");
-                String species = request.getParameter("species");
-                String rawInput = request.getParameter("input");
-                String peptideLengthStr = request.getParameter("peptideLength");
-                String epitopeLengthStr = request.getParameter("epitopeLength");
+        String action = request.getParameter("action");
+        if (action == null) action = "submit";
 
-                // validate required parameters
-                if (!isValidOption(inputType, VALID_INPUT_TYPES)
-                        || !isValidOption(species, VALID_SPECIES)
-                        || rawInput == null || rawInput.trim().isEmpty()
-                        || peptideLengthStr == null || epitopeLengthStr == null) {
-                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid or missing parameters");
-                    return;
-                }
+        switch (action) {
+            case "submit":
+                handleSubmit(request, response);
+                break;
+            case "status":
+                handleStatus(request, response);
+                break;
+            case "result":
+                handleResult(request, response);
+                break;
+            default:
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Unknown action");
+                break;
+        }
+    }
 
-                // validate numeric ranges
-                int pepLen, epiLen;
-                try {
-                    pepLen = Integer.parseInt(peptideLengthStr.replaceAll("\\D", ""));
-                    epiLen = Integer.parseInt(epitopeLengthStr.replaceAll("\\D", ""));
-                } catch (NumberFormatException e) {
-                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid length parameters");
-                    return;
-                }
-                if (pepLen < 5 || pepLen > 50 || epiLen < 5 || epiLen > pepLen) {
-                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Length parameters out of range");
-                    return;
-                }
+    private void handleSubmit(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, ClassNotFoundException {
 
-                // sanitize input (server-side, mirrors client-side filtering)
-                // FASTA input contains > | = [] characters needed for header parsing;
-                // sequence lines are cleaned by the FASTA parser itself (line 195)
-                String sanitizedInput = "FASTA".equals(inputType) ? rawInput.trim() : sanitizeInput(rawInput);
-                sanitizedInput = sanitizedInput.toUpperCase();
-                if (sanitizedInput.isEmpty()) {
-                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Input is empty after sanitization");
-                    return;
-                }
+        // get and validate parameters from the form
+        String inputType = request.getParameter("inputType");
+        String species = request.getParameter("species");
+        String rawInput = request.getParameter("input");
+        String peptideLengthStr = request.getParameter("peptideLength");
+        String epitopeLengthStr = request.getParameter("epitopeLength");
 
-                session.setAttribute("inputType", inputType);
-                session.setAttribute("species", species);
-                session.setAttribute("input", sanitizedInput);
-                session.setAttribute("peptideLength", peptideLengthStr);
-                session.setAttribute("epitopeLength", epitopeLengthStr);
-                session.setAttribute("waitPage", Boolean.TRUE);
-                response.setContentType("text/html;charset=UTF-8");
-                PrintWriter out = response.getWriter();
-                try {
-                    request.getRequestDispatcher("/includes/header.html").include(request, response);
-                    out.println("<meta http-equiv='Refresh' content='0'>");
-                    out.println("<title>AbDesigner</title>");
-                    request.getRequestDispatcher("/includes/title.html").include(request, response);
-                    out.println("<h1>Your request is being processed<br>May require up to 90 seconds for large proteins<br>Please wait...</h1><br>");
-                    request.getRequestDispatcher("/includes/footer.html").include(request, response);
-                } finally {
-                    out.close();
-                }
-            } else {
-                session.removeAttribute("waitPage");
-                // get parameters from the session
-                String inputType = (String) session.getAttribute("inputType");
-                String species = (String) session.getAttribute("species");
-                String input = (String) session.getAttribute("input");
-                String peptideLength = (String) session.getAttribute("peptideLength");
-                String epitopeLength = (String) session.getAttribute("epitopeLength");
+        // validate required parameters
+        if (!isValidOption(inputType, VALID_INPUT_TYPES)
+                || !isValidOption(species, VALID_SPECIES)
+                || rawInput == null || rawInput.trim().isEmpty()
+                || peptideLengthStr == null || epitopeLengthStr == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid or missing parameters");
+            return;
+        }
 
-                // create objects for validation
-                String[] inputParameters = {inputType, species, input, peptideLength, epitopeLength};
-                String url;
-                String message = null;
-                boolean isValidInput = false;
-                boolean isAmbiguousGeneSymbol = false;
+        // validate numeric ranges
+        int pepLen, epiLen;
+        try {
+            pepLen = Integer.parseInt(peptideLengthStr.replaceAll("\\D", ""));
+            epiLen = Integer.parseInt(epitopeLengthStr.replaceAll("\\D", ""));
+        } catch (NumberFormatException e) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid length parameters");
+            return;
+        }
+        if (pepLen < 5 || pepLen > 50 || epiLen < 5 || epiLen > pepLen) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Length parameters out of range");
+            return;
+        }
 
-                // create objects for AbDesigner
-                String entryName = "";
-                String swissProtContent;
-                String inputSequence = null;
-                int spanSetting = Integer.parseInt(peptideLength.replaceAll("\\D", ""));
-                int inputSequenceLength = 0;
-                int numberOfSpan;
-                int matchSpan = Integer.parseInt(epitopeLength.replaceAll("\\D", ""));
-                HeatMapArguments heatMapArguments = null;
+        // sanitize input (server-side, mirrors client-side filtering)
+        // FASTA input contains > | = [] characters needed for header parsing;
+        // sequence lines are cleaned by the FASTA parser itself (line 195)
+        String sanitizedInput = "FASTA".equals(inputType) ? rawInput.trim() : sanitizeInput(rawInput);
+        sanitizedInput = sanitizedInput.toUpperCase();
+        if (sanitizedInput.isEmpty()) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Input is empty after sanitization");
+            return;
+        }
 
-                // validate that input is in database
-                if (inputType.equals("Gene Symbol")) {
-                    entryName = geneLocusMap.get(input + "_" + species);
-                    if (entryName != null) {
-                        if (!entryName.contains(",")) {
-                            isValidInput = true;
-                        } else {
-                            isAmbiguousGeneSymbol = true;
-                        }
-                    }
-                } else if (inputType.equals("Accession Number")) {
-                    isValidInput = accessionLocusMap.containsKey(input.split("\\.")[0]);
-                    if (isValidInput) {
-                        entryName = accessionLocusMap.get(input.split("\\.")[0]);
-                    }
-                } else if (inputType.equals("Entry Name")) {
-                    isValidInput = locusAccessionMap.containsKey(input);
-                    if (isValidInput) {
-                        entryName = input;
-                    }
-                } else if (inputType.equals("FASTA")) {
+        String input = sanitizedInput;
+        int spanSetting = pepLen;
+        int matchSpan = epiLen;
+
+        // create objects for validation
+        String[] inputParameters = {inputType, species, input, peptideLengthStr, epitopeLengthStr};
+        String message = null;
+        boolean isValidInput = false;
+        boolean isAmbiguousGeneSymbol = false;
+
+        // create objects for AbDesigner
+        String entryName = "";
+        String inputSequence = null;
+        int inputSequenceLength;
+        int numberOfSpan;
+
+        // validate that input is in database
+        if (inputType.equals("Gene Symbol")) {
+            entryName = geneLocusMap.get(input + "_" + species);
+            if (entryName != null) {
+                if (!entryName.contains(",")) {
                     isValidInput = true;
-                    String[] strings = input.split("\\n"); // split by a newline
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < strings.length; i++) {
-                        if (!strings[i].startsWith(">")) {
-                            sb.append(strings[i]);
-                        } else {
-                            String[] description = strings[i].split("[\\|\\s]");
-                            // description example >gi|728874|sp|P41181.1|AQP2_HUMAN
-                            if (description.length >= 5 && description[2].equals("SP") && description[4].split("_").length == 2) {
-                                entryName = description[4];
-                            }
-                        }
+                } else {
+                    isAmbiguousGeneSymbol = true;
+                }
+            }
+        } else if (inputType.equals("Accession Number")) {
+            isValidInput = accessionLocusMap.containsKey(input.split("\\.")[0]);
+            if (isValidInput) {
+                entryName = accessionLocusMap.get(input.split("\\.")[0]);
+            }
+        } else if (inputType.equals("Entry Name")) {
+            isValidInput = locusAccessionMap.containsKey(input);
+            if (isValidInput) {
+                entryName = input;
+            }
+        } else if (inputType.equals("FASTA")) {
+            isValidInput = true;
+            String[] strings = input.split("\\n"); // split by a newline
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < strings.length; i++) {
+                if (!strings[i].startsWith(">")) {
+                    sb.append(strings[i]);
+                } else {
+                    String[] description = strings[i].split("[\\|\\s]");
+                    // description example >gi|728874|sp|P41181.1|AQP2_HUMAN
+                    if (description.length >= 5 && description[2].equals("SP") && description[4].split("_").length == 2) {
+                        entryName = description[4];
                     }
-                    // replaceAll digits, whitespace characters, and non-word characters
-                    inputSequence = sb.toString().replaceAll("[\\d\\s\\W]", "");
+                }
+            }
+            // replaceAll digits, whitespace characters, and non-word characters
+            inputSequence = sb.toString().replaceAll("[\\d\\s\\W]", "");
+        }
+
+        // validate that input is not too short or too long
+        if (isValidInput) {
+            inputSequence = (!inputType.equals("FASTA")) ? getValue(DATABASE_PATH + "/segmasker.ran", locusSequencePositionMap, entryName) : inputSequence;
+            inputSequenceLength = inputSequence.length();
+            if (inputSequenceLength < spanSetting) {
+                isValidInput = false;
+                message = "Protein too short: " + inputSequenceLength + " amino acids";
+            } else if (inputSequenceLength > 10000) {
+                isValidInput = false;
+                message = "Protein too long: " + inputSequenceLength + " amino acids";
+            }
+        } else {
+            inputSequenceLength = 0;
+            if (isAmbiguousGeneSymbol) {
+                message = input + " matches multiple Swiss-Prot Entry Names\n\n"
+                        + "i.e. " + entryName + "\n\n"
+                        + "Please select and enter one of the Swiss-Prot Entry Names";
+                inputParameters[0] = "Entry Name";
+            } else {
+                message = "Invalid input";
+            }
+        }
+
+        // validate the parameters
+        if (!isValidInput) {
+            String url = "/index.jsp";
+            request.setAttribute("inputParameters", inputParameters);
+            request.setAttribute("message", message);
+            RequestDispatcher dispatcher =
+                    getServletContext().getRequestDispatcher(url);
+            dispatcher.forward(request, response);
+        } else {
+            numberOfSpan = inputSequenceLength - spanSetting + 1;
+            String filename;
+            String pathname;
+            boolean fileExists;
+
+            if (!inputType.equals("FASTA")) {
+                filename = entryName + "_" + spanSetting + "_" + matchSpan + ".dat";
+                pathname = HEATMAP_DATA_PATH + "/" + filename;
+                fileExists = new File(pathname).exists();
+            } else {
+                filename = DigestUtils.shaHex(entryName + inputSequence) + "_" + spanSetting + "_" + matchSpan + ".dat";
+                pathname = HEATMAP_DATA_PATH + "/" + filename;
+                fileExists = new File(pathname).exists();
+                if (fileExists) {
+                    // verify FASTA cache is not a hash collision
+                    HeatMapArguments cached = HeatMapDataIO.getHeatMapArguments(pathname);
+                    if (!cached.getEntryName().equals(entryName) || !cached.getInputSequence().equals(inputSequence)) {
+                        fileExists = false;
+                    }
+                }
+            }
+
+            if (fileExists) {
+                // cache hit — go straight to results
+                HttpSession session = request.getSession();
+                session.setAttribute("asyncPathname", pathname);
+                session.setAttribute("asyncFilename", filename);
+                session.setAttribute("asyncEntryName", entryName);
+                session.setAttribute("asyncInputType", inputType);
+                session.setAttribute("asyncInput", input);
+                session.setAttribute("asyncInputSequence", inputSequence);
+                session.setAttribute("asyncSpanSetting", spanSetting);
+                session.setAttribute("asyncMatchSpan", matchSpan);
+                response.sendRedirect("AbDesignerServlet?action=result");
+            } else {
+                // cache miss — load database inputs and launch background computation
+                final String fInputType = inputType;
+                final String fEntryName = entryName;
+                final String fInputSequence = inputSequence;
+                final int fSpanSetting = spanSetting;
+                final int fInputSequenceLength = inputSequenceLength;
+                final int fNumberOfSpan = numberOfSpan;
+                final int fMatchSpan = matchSpan;
+                final String fPathname = pathname;
+
+                final String swissProtContent;
+                final ArrayList<ArrayList<String>> uniquenessDatabase;
+                final ArrayList<ArrayList<String>> conservationDatabase;
+
+                if (!inputType.equals("FASTA")) {
+                    swissProtContent = getValue(DATABASE_PATH + "/features.ran", locusFeaturesPositionMap, entryName);
+                    uniquenessDatabase = Database.get2DArrayList(DATABASE_PATH + "/" + entryName.split("_")[1] + "_locusSequenceArrayList.ab");
+                    conservationDatabase = getConservationDatabase(entryName.split("_")[0]);
+                } else {
+                    swissProtContent = (entryName.isEmpty() || !locusAccessionMap.containsKey(entryName)) ? "" : getValue(DATABASE_PATH + "/features.ran", locusFeaturesPositionMap, entryName);
+                    uniquenessDatabase = (entryName.isEmpty()) ? new ArrayList<ArrayList<String>>() : Database.get2DArrayList(DATABASE_PATH + "/" + entryName.split("_")[1] + "_locusSequenceArrayList.ab");
+                    conservationDatabase = (entryName.isEmpty()) ? new ArrayList<ArrayList<String>>() : getConservationDatabase(entryName.split("_")[0]);
                 }
 
-                // validate that input is not too short or too long
-                if (isValidInput) {
-                    inputSequence = (!inputType.equals("FASTA")) ? getValue(DATABASE_PATH + "/segmasker.ran", locusSequencePositionMap, entryName) : inputSequence;
-                    inputSequenceLength = inputSequence.length();
-                    if (inputSequenceLength < spanSetting) {
-                        isValidInput = false;
-                        message = "Protein too short: " + inputSequenceLength + " amino acids";
-                    } else if (inputSequenceLength > 10000) {
-                        isValidInput = false;
-                        message = "Protein too long: " + inputSequenceLength + " amino acids";
-                    }
-                } else {
-                    if (isAmbiguousGeneSymbol) {
-                        message = input + " matches multiple Swiss-Prot Entry Names\n\n"
-                                + "i.e. " + entryName + "\n\n"
-                                + "Please select and enter one of the Swiss-Prot Entry Names";
-                        inputParameters[0] = "Entry Name";
-                    } else {
-                        message = "Invalid input";
-                    }
+                String errorPathname = pathname + ".error";
+                new File(errorPathname).delete(); // clean up stale error file
+
+                HttpSession session = request.getSession();
+                synchronized (session) {
+                    session.setAttribute("asyncPathname", pathname);
+                    session.setAttribute("asyncFilename", filename);
+                    session.setAttribute("asyncEntryName", entryName);
+                    session.setAttribute("asyncInputType", inputType);
+                    session.setAttribute("asyncInput", input);
+                    session.setAttribute("asyncInputSequence", inputSequence);
+                    session.setAttribute("asyncSpanSetting", spanSetting);
+                    session.setAttribute("asyncMatchSpan", matchSpan);
+
+                    new Thread(() -> {
+                        try {
+                            HeatMapArguments hma = AbDesigner.getHeatMapArguments(
+                                    fInputType, fEntryName, swissProtContent, fInputSequence,
+                                    fSpanSetting, fInputSequenceLength, fNumberOfSpan, fMatchSpan,
+                                    uniquenessDatabase, conservationDatabase);
+                            String tempPathname = fPathname + ".tmp";
+                            HeatMapDataIO.add(hma, tempPathname);
+                            if (!new File(tempPathname).renameTo(new File(fPathname))) {
+                                throw new IOException("Failed to rename temp file to " + fPathname);
+                            }
+                        } catch (Exception e) {
+                            try (PrintWriter pw = new PrintWriter(new FileWriter(errorPathname))) {
+                                pw.println(e.getMessage() != null ? e.getMessage() : e.getClass().getName());
+                            } catch (IOException ignored) {
+                            }
+                            Logger.getLogger(AbDesignerServlet.class.getName())
+                                    .log(Level.SEVERE, "Background computation failed for " + fEntryName, e);
+                        }
+                    }, "AbDesigner-compute-" + entryName).start();
                 }
 
-                // validate the parameters
-                if (!isValidInput) {
-                    url = "/index.jsp";
-                    request.setAttribute("inputParameters", inputParameters);
-                    request.setAttribute("message", message);
-                    // forward request and response to the index.jsp
-                    RequestDispatcher dispatcher =
-                            getServletContext().getRequestDispatcher(url);
-                    dispatcher.forward(request, response);
-                } else {
-                    numberOfSpan = inputSequenceLength - spanSetting + 1;
-                    String filename;
-                    String pathname;
-                    boolean fileExists;
-                    if (!inputType.equals("FASTA")) {
-                        filename = entryName + "_" + spanSetting + "_" + matchSpan + ".dat";
-                        pathname = HEATMAP_DATA_PATH + "/" + filename;
-                        File file = new File(pathname);
-                        fileExists = file.exists();
-                        if (!fileExists) {
-                            swissProtContent = getValue(DATABASE_PATH + "/features.ran", locusFeaturesPositionMap, entryName);
-                            ArrayList<ArrayList<String>> uniquenessDatabase = Database.get2DArrayList(DATABASE_PATH + "/" + entryName.split("_")[1] + "_locusSequenceArrayList.ab"); // species
-                            ArrayList<ArrayList<String>> conservationDatabase = getConservationDatabase(entryName.split("_")[0]); // gene
-                            heatMapArguments = AbDesigner.getHeatMapArguments("non-FASTA", entryName, swissProtContent, inputSequence, spanSetting, inputSequenceLength, numberOfSpan, matchSpan, uniquenessDatabase, conservationDatabase);
-                            HeatMapDataIO.add(heatMapArguments, pathname);
-                        } else {
-                            heatMapArguments = HeatMapDataIO.getHeatMapArguments(pathname);
-                        }
-                    } else {
-                        filename = DigestUtils.shaHex(entryName + inputSequence) + "_" + spanSetting + "_" + matchSpan + ".dat";
-                        pathname = HEATMAP_DATA_PATH + "/" + filename;
-                        File file = new File(pathname);
-                        fileExists = file.exists();
-                        if (fileExists) {
-                            heatMapArguments = HeatMapDataIO.getHeatMapArguments(pathname);
-                            if (!heatMapArguments.getEntryName().equals(entryName) || !heatMapArguments.getInputSequence().equals(inputSequence)) {
-                                fileExists = false;
-                            }
-                        }
-                        if (!fileExists) {
-                            swissProtContent = (entryName.isEmpty() || !locusAccessionMap.containsKey(entryName)) ? "" : getValue(DATABASE_PATH + "/features.ran", locusFeaturesPositionMap, entryName);
-                            ArrayList<ArrayList<String>> uniquenessDatabase = (entryName.isEmpty()) ? new ArrayList<ArrayList<String>>() : Database.get2DArrayList(DATABASE_PATH + "/" + entryName.split("_")[1] + "_locusSequenceArrayList.ab");
-                            ArrayList<ArrayList<String>> conservationDatabase = (entryName.isEmpty()) ? new ArrayList<ArrayList<String>>() : getConservationDatabase(entryName.split("_")[0]);
-                            heatMapArguments = AbDesigner.getHeatMapArguments(inputType, entryName, swissProtContent, inputSequence, spanSetting, inputSequenceLength, numberOfSpan, matchSpan, uniquenessDatabase, conservationDatabase);
-                            HeatMapDataIO.add(heatMapArguments, pathname);
-                        }
-                    }
-                    String accession = locusAccessionMap.get(entryName);
-                    String[][] arr2DIgScore = heatMapArguments.getArr2DIgScore();
-                    String[][] arr2DUniqueness = heatMapArguments.getArr2DUniqueness();
-                    String[][] arr2DConservation = heatMapArguments.getArr2DConservation();
-                    int regionSiteNumber = heatMapArguments.getArrayAllRegion().length + heatMapArguments.getArrayAllSite().length;
-                    int appletHeight = (regionSiteNumber > 15) ? 628 : (328 + (regionSiteNumber * 20));
-                    url = "/abdesigner_output.jsp";
-                    request.setAttribute("filename", filename);
-                    request.setAttribute("inputType", inputType);
-                    if (!inputType.equals("FASTA")) {
-                        request.setAttribute("input", entryName);
-                    } else {
-                        request.setAttribute("input", (entryName.isEmpty()) ? inputSequence : (entryName + ": " + inputSequence));
-                    }
-                    request.setAttribute("accession", accession);
-                    request.setAttribute("peptideLength", spanSetting);
-                    request.setAttribute("epitopeLength", matchSpan);
-                    request.setAttribute("arr2DIgScore", arr2DIgScore);
-                    request.setAttribute("arr2DUniqueness", arr2DUniqueness);
-                    request.setAttribute("arr2DConservation", arr2DConservation);
-                    request.setAttribute("appletHeight", appletHeight);
-                    request.setAttribute("heatMapJson", heatMapArguments.toJson());
-                    // forward request and response objects to abdesigner_output.jsp page
-                    RequestDispatcher dispatcher =
-                            getServletContext().getRequestDispatcher(url);
-                    dispatcher.forward(request, response);
-                }
+                // show the polling wait page
+                String proteinName = entryName.isEmpty() ? "FASTA sequence" : entryName;
+                request.setAttribute("proteinName", proteinName);
+                request.setAttribute("sequenceLength", inputSequenceLength);
+                RequestDispatcher dispatcher =
+                        getServletContext().getRequestDispatcher("/abdesigner_wait.jsp");
+                dispatcher.forward(request, response);
             }
         }
     }
 
+    private void handleStatus(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+        HttpSession session = request.getSession(false);
+        PrintWriter out = response.getWriter();
+        try {
+            if (session == null || session.getAttribute("asyncPathname") == null) {
+                out.print("{\"error\":\"No computation in progress\"}");
+                return;
+            }
+            String pathname = (String) session.getAttribute("asyncPathname");
+            if (new File(pathname).exists()) {
+                out.print("{\"ready\":true}");
+            } else if (new File(pathname + ".error").exists()) {
+                String errMsg = new String(Files.readAllBytes(Paths.get(pathname + ".error"))).trim();
+                errMsg = errMsg.replace("\\", "\\\\").replace("\"", "\\\"");
+                out.print("{\"error\":\"" + errMsg + "\"}");
+            } else {
+                out.print("{\"ready\":false}");
+            }
+        } finally {
+            out.close();
+        }
+    }
+
+    private void handleResult(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, ClassNotFoundException {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("asyncPathname") == null) {
+            response.sendRedirect("index.jsp");
+            return;
+        }
+
+        String pathname = (String) session.getAttribute("asyncPathname");
+        String filename = (String) session.getAttribute("asyncFilename");
+        String entryName = (String) session.getAttribute("asyncEntryName");
+        String inputType = (String) session.getAttribute("asyncInputType");
+        String input = (String) session.getAttribute("asyncInput");
+        String inputSequence = (String) session.getAttribute("asyncInputSequence");
+        int spanSetting = (int) session.getAttribute("asyncSpanSetting");
+        int matchSpan = (int) session.getAttribute("asyncMatchSpan");
+
+        if (!new File(pathname).exists()) {
+            response.sendRedirect("index.jsp");
+            return;
+        }
+
+        HeatMapArguments heatMapArguments = HeatMapDataIO.getHeatMapArguments(pathname);
+        String accession = locusAccessionMap.get(entryName);
+        String[][] arr2DIgScore = heatMapArguments.getArr2DIgScore();
+        String[][] arr2DUniqueness = heatMapArguments.getArr2DUniqueness();
+        String[][] arr2DConservation = heatMapArguments.getArr2DConservation();
+        int regionSiteNumber = heatMapArguments.getArrayAllRegion().length + heatMapArguments.getArrayAllSite().length;
+        int appletHeight = (regionSiteNumber > 15) ? 628 : (328 + (regionSiteNumber * 20));
+
+        String url = "/abdesigner_output.jsp";
+        request.setAttribute("filename", filename);
+        request.setAttribute("inputType", inputType);
+        if (!inputType.equals("FASTA")) {
+            request.setAttribute("input", entryName);
+        } else {
+            request.setAttribute("input", (entryName.isEmpty()) ? inputSequence : (entryName + ": " + inputSequence));
+        }
+        request.setAttribute("accession", accession);
+        request.setAttribute("peptideLength", spanSetting);
+        request.setAttribute("epitopeLength", matchSpan);
+        request.setAttribute("arr2DIgScore", arr2DIgScore);
+        request.setAttribute("arr2DUniqueness", arr2DUniqueness);
+        request.setAttribute("arr2DConservation", arr2DConservation);
+        request.setAttribute("appletHeight", appletHeight);
+        request.setAttribute("heatMapJson", heatMapArguments.toJson());
+        RequestDispatcher dispatcher =
+                getServletContext().getRequestDispatcher(url);
+        dispatcher.forward(request, response);
+    }
+
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /** 
+    /**
      * Handles the HTTP <code>GET</code> method.
      * @param request servlet request
      * @param response servlet response
@@ -316,7 +423,7 @@ public class AbDesignerServlet extends HttpServlet {
         }
     }
 
-    /** 
+    /**
      * Handles the HTTP <code>POST</code> method.
      * @param request servlet request
      * @param response servlet response
@@ -333,7 +440,7 @@ public class AbDesignerServlet extends HttpServlet {
         }
     }
 
-    /** 
+    /**
      * Returns a short description of the servlet.
      * @return a String containing servlet description
      */
